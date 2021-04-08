@@ -38,6 +38,7 @@ protected:
     
     int maxit;            // max iterations
     double tol;           // tolerance for convergence
+    double quant;         // quantile of data to use
     bool conv;
     
     

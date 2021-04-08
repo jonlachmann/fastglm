@@ -61,6 +61,7 @@ protected:
     double tol;
     int maxit;
     int type;
+    double quant;
     bool is_big_matrix;
     int rank;
     
@@ -300,7 +301,9 @@ protected:
         
         beta_prev = beta;
 
-        inds = topQuantile(w, 0.1);
+        inds = topQuantile(w, quant);
+
+        Rcout << quant << "\n";
 
         w_s = getInds(w, inds);
 
@@ -520,6 +523,7 @@ public:
         double tol_ = 1e-6,
         int maxit_ = 100,
         int type_ = 1,
+        double quant_ = 1,
         bool is_big_matrix_ = false) :
     GlmBase<Eigen::VectorXd, Eigen::MatrixXd>(X_.rows(), X_.cols(),
                                                      tol_, maxit_),
@@ -538,6 +542,7 @@ public:
                                                      tol(tol_),
                                                      maxit(maxit_),
                                                      type(type_),
+                                                     quant(quant_),
                                                      is_big_matrix(is_big_matrix_)
                                                      {}
     

@@ -32,7 +32,8 @@ List fastglm(Rcpp::NumericMatrix Xs,
              Function validmu, 
              int type, 
              double tol, 
-             int maxit) 
+             int maxit,
+             double quant)
 {
     const Map<MatrixXd>  X(as<Map<MatrixXd> >(Xs));
     const Map<VectorXd>  y(as<Map<VectorXd> >(ys));
@@ -51,7 +52,7 @@ List fastglm(Rcpp::NumericMatrix Xs,
     
     glm_solver = new glm(X, y, weights, offset, 
                          var, mu_eta, linkinv, dev_resids, 
-                         valideta, validmu, tol, maxit, type,
+                         valideta, validmu, tol, maxit, type, quant,
                          is_big_matrix);
     
     // initialize parameters
@@ -95,9 +96,9 @@ List fit_glm(Rcpp::NumericMatrix x, Rcpp::NumericVector y, Rcpp::NumericVector w
              Rcpp::NumericVector start, Rcpp::NumericVector mu, Rcpp::NumericVector eta,
              Function var, Function mu_eta, Function linkinv, Function dev_resids, 
              Function valideta, Function validmu,  
-             int type, double tol, int maxit) 
+             int type, double tol, int maxit, double quant)
 {
-    return fastglm(x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit);
+    return fastglm(x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, quant);
 }
 
 
@@ -119,7 +120,8 @@ List bigfastglm(XPtr<BigMatrix> Xs,
                 Function validmu, 
                 int type, 
                 double tol, 
-                int maxit) 
+                int maxit,
+                double quant)
 {
     //const Map<MatrixXd>  X(as<Map<MatrixXd> >(Xs));
     //XPtr<BigMatrix> bMPtr(Xs);
@@ -200,10 +202,10 @@ List fit_big_glm(SEXP x, Rcpp::NumericVector y, Rcpp::NumericVector weights, Rcp
                  Rcpp::NumericVector start, Rcpp::NumericVector mu, Rcpp::NumericVector eta,
                  Function var, Function mu_eta, Function linkinv, Function dev_resids, 
                  Function valideta, Function validmu,  
-                 int type, double tol, int maxit) 
+                 int type, double tol, int maxit, double quant)
 {
     XPtr<BigMatrix> xpMat(x);
     
-    return bigfastglm(xpMat, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit);
+    return bigfastglm(xpMat, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, quant);
 }
 

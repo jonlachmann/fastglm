@@ -35,6 +35,8 @@ bench2 <- microbenchmark(glmfast <- fastglm(as.matrix(logistic_xx), as.matrix(lo
 bench1
 bench2
 
+glmfast <- fastglm(as.matrix((logistic_xx)), as.matrix(logistic_yy), family=binomial(), method=0, tol=0.01, quant=0.15)
+
 system.time(glmfast <- fastglm(as.matrix((logistic_xx)), as.matrix(logistic_yy), family=binomial(), method=0, tol=0.01))
 system.time(glmfast <- fastglm(as.matrix((logistic_xx)), as.matrix(logistic_yy), family=binomial(), method=1))
 

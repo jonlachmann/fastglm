@@ -9,11 +9,11 @@ colMin_dense <- function(A) {
     .Call(`_fastglm_colMin_dense`, A)
 }
 
-fit_glm <- function(x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit) {
-    .Call(`_fastglm_fit_glm`, x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit)
+fit_glm <- function(x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, quant) {
+    .Call(`_fastglm_fit_glm`, x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, quant)
 }
 
-fit_big_glm <- function(x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit) {
-    .Call(`_fastglm_fit_big_glm`, x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit)
+fit_big_glm <- function(x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, quant) {
+    .Call(`_fastglm_fit_big_glm`, x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, quant)
 }
 
