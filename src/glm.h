@@ -146,7 +146,6 @@ protected:
     virtual void update_eta()
     {
         // eta <- drop(x %*% start)
-
         if (type == 0)
         {
             //VectorXd effects(PQR.householderQ().adjoint() * y);
@@ -213,9 +212,9 @@ protected:
     {
         // take half step
         beta = 0.5 * (beta.array() + beta_prev.array());
-        
+
         update_eta();
-        
+
         update_mu();
     }
     
@@ -300,15 +299,23 @@ protected:
         //enum {ColPivQR_t = 0, QR_t, LLT_t, LDLT_t, SVD_t, SymmEigen_t, GESDD_t};
         
         beta_prev = beta;
-        
+
+        inds = topQuantile(w, 0.1);
+
+        w_s = getInds(w, inds);
+
+        z_s = getInds(z, inds);
+
+        X_s = getRows(X, inds);
+
         if (type == 0)
         {
-            PQR.compute(w.asDiagonal() * X); // decompose the model matrix
+            PQR.compute(w_s.asDiagonal() * X_s); // decompose the model matrix
             Pmat = (PQR.colsPermutation());
             rank                               = PQR.rank();
             if (rank == nvars) 
             {	// full rank case
-                beta     = PQR.solve( (z.array() * w.array()).matrix() );
+                beta     = PQR.solve( (z_s.array() * w_s.array()).matrix() );
                 // m_fitted   = X * m_coef;
                 //m_se       = Pmat * PQR.matrixQR().topRows(m_p).
                 //triangularView<Upper>().solve(MatrixXd::Identity(nvars, nvars)).rowwise().norm();
@@ -317,7 +324,7 @@ protected:
                 Rinv = (PQR.matrixQR().topLeftCorner(rank, rank).
                                                       triangularView<Upper>().
                                                       solve(MatrixXd::Identity(rank, rank)));
-                effects = PQR.householderQ().adjoint() * (z.array() * w.array()).matrix();
+                effects = PQR.householderQ().adjoint() * (z_s.array() * w_s.array()).matrix();
                 beta.head(rank)                 = Rinv * effects.head(rank);
                 beta                            = Pmat * beta;
                 
@@ -330,8 +337,33 @@ protected:
             }
         } else if (type == 1)
         {
-            QR.compute(w.asDiagonal() * X);
-            beta                     = QR.solve((z.array() * w.array()).matrix());
+                PQR.compute(w.asDiagonal() * X); // decompose the model matrix
+            Pmat = (PQR.colsPermutation());
+            rank                               = PQR.rank();
+            if (rank == nvars)
+            {	// full rank case
+                beta     = PQR.solve( (z.array() * w.array()).matrix() );
+                // m_fitted   = X * m_coef;
+                //m_se       = Pmat * PQR.matrixQR().topRows(m_p).
+                //triangularView<Upper>().solve(MatrixXd::Identity(nvars, nvars)).rowwise().norm();
+            } else
+            {
+                Rinv = (PQR.matrixQR().topLeftCorner(rank, rank).
+                                                      triangularView<Upper>().
+                                                      solve(MatrixXd::Identity(rank, rank)));
+                effects = PQR.householderQ().adjoint() * (z.array() * w.array()).matrix();
+                beta.head(rank)                 = Rinv * effects.head(rank);
+                beta                            = Pmat * beta;
+
+                // create fitted values from effects
+                // (can't use X*m_coef if X is rank-deficient)
+                effects.tail(nobs - rank).setZero();
+                //m_fitted                          = PQR.householderQ() * effects;
+                //m_se.head(m_r)                    = Rinv.rowwise().norm();
+                //m_se                              = Pmat * m_se;
+            }
+            //QR.compute(w.asDiagonal() * X);
+            //beta                     = QR.solve((z.array() * w.array()).matrix());
             //m_fitted                   = X * m_coef;
             //m_se                       = QR.matrixQR().topRows(m_p).
             //triangularView<Upper>().solve(I_p()).rowwise().norm();
@@ -420,7 +452,7 @@ protected:
         //     //m_fitted       = X * m_coef;
         //     //m_se           = VDi.rowwise().norm();
         // }
-        
+
     }
     
     virtual void save_se()

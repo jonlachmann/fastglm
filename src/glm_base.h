@@ -3,6 +3,7 @@
 
 #include <Rcpp.h>
 #include <RcppEigen.h>
+#include "functions.h"
 
 using namespace Rcpp;
 using namespace std;
@@ -26,9 +27,13 @@ protected:
     VecTypeX mu_eta;
     VecTypeX mu;
     VecTypeX z;
+    VecTypeX z_s;
     VecTypeX w;
+    VecTypeX w_s;
     MatTypeX vcov;
+    MatTypeX X_s;
     VecTypeX se;
+    Eigen::VectorXi inds;
     double dev, devold, devnull;
     
     int maxit;            // max iterations
@@ -149,7 +154,6 @@ public:
         
         for(i = 0; i < maxit; ++i)
         {
-
             update_var_mu();
 
             update_mu_eta();
@@ -165,9 +169,9 @@ public:
             update_mu();
 
             update_dev_resids();
-            
+
             run_step_halving(i);
-            
+
             if (std::isinf(dev) && i == 0)
             {
                 stop("cannot find valid starting values: please specify some");
