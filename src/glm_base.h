@@ -5,6 +5,8 @@
 #include <RcppEigen.h>
 #include "functions.h"
 
+#include <chrono>
+
 using namespace Rcpp;
 using namespace std;
 
@@ -155,23 +157,53 @@ public:
         
         for(i = 0; i < maxit; ++i)
         {
+            Rcout << "Iteration: " << i << "\n";
+            auto time0 = std::chrono::high_resolution_clock::now();
+
             update_var_mu();
+
+            auto time1 = std::chrono::high_resolution_clock::now();
+            Rcout << "Var mu: " << std::chrono::duration_cast<std::chrono::microseconds>(time1 - time0).count() << "\n";
 
             update_mu_eta();
 
+            auto time2 = std::chrono::high_resolution_clock::now();
+            Rcout << "Mu eta: " << std::chrono::duration_cast<std::chrono::microseconds>(time2 - time1).count() << "\n";
+
             update_z();
+
+            auto time3 = std::chrono::high_resolution_clock::now();
+            Rcout << "Z: " << std::chrono::duration_cast<std::chrono::microseconds>(time3 - time2).count() << "\n";
 
             update_w();
 
+            auto time4 = std::chrono::high_resolution_clock::now();
+            Rcout << "W: " << std::chrono::duration_cast<std::chrono::microseconds>(time4 - time3).count() << "\n";
+
             solve_wls(i);
+
+            auto time5 = std::chrono::high_resolution_clock::now();
+            Rcout << "WLS: " << std::chrono::duration_cast<std::chrono::microseconds>(time5 - time4).count() << "\n";
 
             update_eta();
 
+            auto time6 = std::chrono::high_resolution_clock::now();
+            Rcout << "Eta: " << std::chrono::duration_cast<std::chrono::microseconds>(time6 - time5).count() << "\n";
+
             update_mu();
+
+            auto time7 = std::chrono::high_resolution_clock::now();
+            Rcout << "Mu: " << std::chrono::duration_cast<std::chrono::microseconds>(time7 - time6).count() << "\n";
 
             update_dev_resids();
 
+            auto time8 = std::chrono::high_resolution_clock::now();
+            Rcout << "Dev resids: " << std::chrono::duration_cast<std::chrono::microseconds>(time8 - time7).count() << "\n";
+
             run_step_halving(i);
+
+            auto time9 = std::chrono::high_resolution_clock::now();
+            Rcout << "Step halve: " << std::chrono::duration_cast<std::chrono::microseconds>(time9 - time8).count() << "\n";
 
             if (std::isinf(dev) && i == 0)
             {

@@ -126,7 +126,7 @@ fastglmPure <- function(x, y,
               is.numeric(method),
               is.numeric(tol),
               is.numeric(maxit),
-              tol[1] > 0,
+              #tol[1] > 0,
               maxit[1] > 0,
               quant[1] > 0
               )

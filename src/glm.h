@@ -140,8 +140,15 @@ protected:
     {
         // mu <- linkinv(eta <- eta + offset)
         NumericVector mu_nv = linkinv(eta);
-        
-        std::copy(mu_nv.begin(), mu_nv.end(), mu.data());
+
+        Rcout << "Mu update:" << "\n";
+        Rcout << mu_nv.size() << "\n";
+        Rcout << mu.size() << "\n";
+        Rcout << mu_nv.begin() << " - " << mu_nv.end() << "\n";
+
+        mu = Eigen::Map<Eigen::VectorXd>(mu_nv.begin(), mu.size());
+        //std::copy(mu_nv.begin(), mu_nv.end(), mu.data());
+        Rcout << "Mu 1: " << mu(1) << "\n";
     }
     
     virtual void update_eta()
@@ -211,11 +218,12 @@ protected:
     
     virtual void step_halve()
     {
+        Rcout << "Step halve internal 1" << "\n";
         // take half step
         beta = 0.5 * (beta.array() + beta_prev.array());
-
+        Rcout << "Step halve internal 2" << "\n";
         update_eta();
-
+        Rcout << "Step halve internal 3" << "\n";
         update_mu();
     }
     
@@ -224,6 +232,7 @@ protected:
         // check for infinite deviance
         if (std::isinf(dev))
         {
+            Rcout << "Step halve inf" << "\n";
             int itrr = 0;
             while(std::isinf(dev))
             {
@@ -245,11 +254,12 @@ protected:
         // check for boundary violations
         if (!(valideta(eta) && validmu(mu)))
         {
+            Rcout << "Step halve invalid" << "\n";
             int itrr = 0;
             while(!(valideta(eta) && validmu(mu)))
             {
                 ++itrr;
-                if (itrr > maxit)
+                if (itrr > 2)
                 {
                     break;
                 }
@@ -268,6 +278,7 @@ protected:
         //std::abs(deviance - deviance_prev) / (0.1 + std::abs(deviance)) < tol_irls
         if ((dev - devold) / (0.1 + std::abs(dev)) >= tol && iterr > 0)
         {
+            Rcout << "Step halve dev increase" << "\n";
             int itrr = 0;
             
             //std::cout << "dev:" << deviance << "dev prev:" << deviance_prev << std::endl;
@@ -275,6 +286,7 @@ protected:
             while((dev - devold) / (0.1 + std::abs(dev)) >= -tol)
             {
                 ++itrr;
+                Rcout << "Step halve dev increase iter " << itrr << "\n";
                 if (itrr > maxit)
                 {
                     break;
@@ -283,6 +295,7 @@ protected:
                 //std::cout << "half step (increasing dev)!" << itrr << std::endl;
                 
                 step_halve();
+                Rcout << "Step halve done" << "\n";
                 
                 
                 update_dev_resids_dont_update_old();
@@ -300,6 +313,10 @@ protected:
         //enum {ColPivQR_t = 0, QR_t, LLT_t, LDLT_t, SVD_t, SymmEigen_t, GESDD_t};
         
         beta_prev = beta;
+
+        if (quant != 1) {
+
+        }
 
         inds = topQuantile(w, quant);
 
