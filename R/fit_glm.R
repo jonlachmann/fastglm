@@ -207,7 +207,7 @@ fastglmPure <- function(x, y,
                        family$variance, family$mu.eta, family$linkinv, family$dev.resids, 
                        family$valideta, family$validmu,
                        as.integer(method[1]), as.double(tol[1]), as.integer(maxit[1]),
-                       as.integer(maxit_s[1]), as.double(quant[1]), as.logical(debug[1])
+                       as.integer(maxit_s[1]), as.double(quant[1]), as.numeric(debug[1])
         )
         
         res$intercept <- any(is.int <- colMax_dense(x) == colMin_dense(x))
@@ -218,7 +218,7 @@ fastglmPure <- function(x, y,
                            family$variance, family$mu.eta, family$linkinv, family$dev.resids, 
                            family$valideta, family$validmu,
                            as.integer(method[1]), as.double(tol[1]), as.integer(maxit[1]),
-                           as.integer(maxit_s[1]), as.double(quant[1]), as.logical(debug[1])
+                           as.integer(maxit_s[1]), as.double(quant[1]), as.numeric(debug[1])
         )
         
         res$intercept <- any(is.int <- big.colMax(x) == big.colMin(x))
