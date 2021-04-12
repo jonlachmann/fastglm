@@ -35,7 +35,7 @@ List fastglm(Rcpp::NumericMatrix Xs,
              int maxit,
              int maxit_s,
              double quant,
-             bool debug)
+             int debug)
 {
     const Map<MatrixXd>  X(as<Map<MatrixXd> >(Xs));
     const Map<VectorXd>  y(as<Map<VectorXd> >(ys));
@@ -98,7 +98,7 @@ List fit_glm(Rcpp::NumericMatrix x, Rcpp::NumericVector y, Rcpp::NumericVector w
              Rcpp::NumericVector start, Rcpp::NumericVector mu, Rcpp::NumericVector eta,
              Function var, Function mu_eta, Function linkinv, Function dev_resids, 
              Function valideta, Function validmu,  
-             int type, double tol, int maxit, int maxit_s, double quant, bool debug)
+             int type, double tol, int maxit, int maxit_s, double quant, int debug)
 {
     return fastglm(x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, maxit_s, quant, debug);
 }
@@ -125,7 +125,7 @@ List bigfastglm(XPtr<BigMatrix> Xs,
                 int maxit,
                 int maxit_s,
                 double quant,
-                bool debug)
+                int debug)
 {
     //const Map<MatrixXd>  X(as<Map<MatrixXd> >(Xs));
     //XPtr<BigMatrix> bMPtr(Xs);
@@ -206,7 +206,7 @@ List fit_big_glm(SEXP x, Rcpp::NumericVector y, Rcpp::NumericVector weights, Rcp
                  Rcpp::NumericVector start, Rcpp::NumericVector mu, Rcpp::NumericVector eta,
                  Function var, Function mu_eta, Function linkinv, Function dev_resids, 
                  Function valideta, Function validmu,  
-                 int type, double tol, int maxit, int maxit_s, double quant, bool debug)
+                 int type, double tol, int maxit, int maxit_s, double quant, int debug)
 {
     XPtr<BigMatrix> xpMat(x);
     

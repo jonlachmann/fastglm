@@ -3,6 +3,9 @@
 # Created by: jonlachmann
 # Created on: 2021-03-31
 
+Rcpp::compileAttributes()
+
+
 {
   library(devtools)
   build(vignettes = F)
