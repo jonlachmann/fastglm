@@ -478,7 +478,7 @@ public:
         int type_ = 1,
         double quant_ = 1,
         bool is_big_matrix_ = false,
-        bool debug_ = false) :
+        int debug_ = false) :
     GlmBase<Eigen::VectorXd, Eigen::MatrixXd>(X_.rows(), X_.cols(),
                                                      tol_, maxit_),
                                                      X(X_),
@@ -497,7 +497,7 @@ public:
                                                      type(type_),
                                                      quant(quant_),
                                                      is_big_matrix(is_big_matrix_),
-                                                     debug(debug_),
+                                                     debug((bool) debug_),
                                                      X_ref(X_),
                                                      Y_ref(Y_),
                                                      weights_ref(weights_),
