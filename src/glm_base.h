@@ -48,7 +48,7 @@ protected:
     int maxit_s;          // max step halving iterations
     double tol;           // tolerance for convergence
     double quant;         // quantile of data to use
-    bool debug;           // debug flag
+    int debug;           // debug flag
     bool conv;
 
     Eigen::Ref<Eigen::VectorXd> mu_ref;
@@ -149,57 +149,57 @@ public:
         
         for(i = 0; i < maxit; ++i)
         {
-            if (debug) Rcout << "Iteration: " << i << "\n";
+            if (debug == 1) Rcout << "Iteration: " << i << "\n";
             auto time0 = std::chrono::high_resolution_clock::now();
 
             update_var_mu();
 
             auto time1 = std::chrono::high_resolution_clock::now();
-            if (debug) Rcout << "Var mu: " << std::chrono::duration_cast<std::chrono::microseconds>(time1 - time0).count() << "\n";
+            if (debug == 1) Rcout << "Var mu: " << std::chrono::duration_cast<std::chrono::microseconds>(time1 - time0).count() << "\n";
 
             update_mu_eta();
 
             auto time2 = std::chrono::high_resolution_clock::now();
-            if (debug) Rcout << "Mu eta: " << std::chrono::duration_cast<std::chrono::microseconds>(time2 - time1).count() << "\n";
+            if (debug == 1) Rcout << "Mu eta: " << std::chrono::duration_cast<std::chrono::microseconds>(time2 - time1).count() << "\n";
 
             update_z();
 
             auto time3 = std::chrono::high_resolution_clock::now();
-            if (debug) Rcout << "Z: " << std::chrono::duration_cast<std::chrono::microseconds>(time3 - time2).count() << "\n";
+            if (debug == 1) Rcout << "Z: " << std::chrono::duration_cast<std::chrono::microseconds>(time3 - time2).count() << "\n";
 
             update_w();
 
             auto time4 = std::chrono::high_resolution_clock::now();
-            if (debug) Rcout << "W: " << std::chrono::duration_cast<std::chrono::microseconds>(time4 - time3).count() << "\n";
+            if (debug == 1) Rcout << "W: " << std::chrono::duration_cast<std::chrono::microseconds>(time4 - time3).count() << "\n";
 
             if (quant != 1) extract_quantile();
             solve_wls(i);
 
             auto time5 = std::chrono::high_resolution_clock::now();
-            if (debug) Rcout << "WLS: " << std::chrono::duration_cast<std::chrono::microseconds>(time5 - time4).count() << "\n";
+            if (debug == 1) Rcout << "WLS: " << std::chrono::duration_cast<std::chrono::microseconds>(time5 - time4).count() << "\n";
 
             subsample(false);
 
             update_eta();
 
             auto time6 = std::chrono::high_resolution_clock::now();
-            if (debug) Rcout << "Eta: " << std::chrono::duration_cast<std::chrono::microseconds>(time6 - time5).count() << "\n";
+            if (debug == 1) Rcout << "Eta: " << std::chrono::duration_cast<std::chrono::microseconds>(time6 - time5).count() << "\n";
 
             update_mu();
 
             auto time7 = std::chrono::high_resolution_clock::now();
-            if (debug) Rcout << "Mu: " << std::chrono::duration_cast<std::chrono::microseconds>(time7 - time6).count() << "\n";
+            if (debug == 1) Rcout << "Mu: " << std::chrono::duration_cast<std::chrono::microseconds>(time7 - time6).count() << "\n";
 
             update_dev_resids();
 
             auto time8 = std::chrono::high_resolution_clock::now();
-            if (debug) Rcout << "Dev resids: " << std::chrono::duration_cast<std::chrono::microseconds>(time8 - time7).count() << "\n";
+            if (debug == 1) Rcout << "Dev resids: " << std::chrono::duration_cast<std::chrono::microseconds>(time8 - time7).count() << "\n";
 
             if (quant == 1) run_step_halving(i);
             else cooldown(i, ratio);
 
             auto time9 = std::chrono::high_resolution_clock::now();
-            if (debug) Rcout << "Step halve: " << std::chrono::duration_cast<std::chrono::microseconds>(time9 - time8).count() << "\n";
+            if (debug == 1) Rcout << "Step halve: " << std::chrono::duration_cast<std::chrono::microseconds>(time9 - time8).count() << "\n";
 
             if (std::isinf(dev) && i == 0)
             {
