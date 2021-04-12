@@ -6,6 +6,7 @@
 #include "functions.h"
 
 #include <chrono>
+#include <random>
 
 using namespace Rcpp;
 using namespace std;
@@ -25,15 +26,20 @@ protected:
     VecTypeX beta_prev;   // auxiliary parameters
     
     VecTypeX eta;
+    VecTypeX eta_s;
     VecTypeX var_mu;
     VecTypeX mu_eta;
     VecTypeX mu;
+    VecTypeX mu_s;
     VecTypeX z;
     VecTypeX z_s;
     VecTypeX w;
     VecTypeX w_s;
     MatTypeX vcov;
     MatTypeX X_s;
+    VecTypeX Y_s;
+    VecTypeX weights_s;
+    VecTypeX offset_s;
     VecTypeX se;
     Eigen::VectorXi inds;
     double dev, devold, devnull;
@@ -45,6 +51,8 @@ protected:
     bool debug;           // debug flag
     bool conv;
 
+    Eigen::Ref<Eigen::VectorXd> mu_ref;
+    Eigen::Ref<Eigen::VectorXd> eta_ref;
     Eigen::Ref<Eigen::VectorXd> w_ref;
     Eigen::Ref<Eigen::VectorXd> z_ref;
 
@@ -61,67 +69,35 @@ protected:
     }
     
     
-    virtual void update_eta()
-    {
-        
-    }
+    virtual void update_eta() {}
     
-    virtual void update_var_mu()
-    {
-        
-    }
+    virtual void update_var_mu() {}
     
-    virtual void update_mu_eta()
-    {
-        
-    }
+    virtual void update_mu_eta() {}
     
-    virtual void update_mu()
-    {
-        
-    }
+    virtual void update_mu() {}
     
-    virtual void update_z()
-    {
-        
-    }
+    virtual void update_z() {}
     
-    virtual void update_w()
-    {
-        
-    }
+    virtual void update_w() {}
     
-    virtual void step_halve()
-    {
-        
-    }
+    virtual void step_halve() {}
+
+    virtual void cooldown(int &iterr, double &ratio) {}
+
+    virtual void subsample(bool first) {}
 
     virtual void extract_quantile() {}
     
-    virtual void run_step_halving(int &iterr)
-    {
-        
-    }
+    virtual void run_step_halving(int &iterr) {}
     
-    virtual void update_dev_resids()
-    {
-        
-    }
+    virtual void update_dev_resids() {}
     
-    virtual void update_dev_resids_dont_update_old()
-    {
-        
-    }
+    virtual void update_dev_resids_dont_update_old() {}
     
-    virtual void solve_wls(int iter)
-    {
-        
-    }
+    virtual void solve_wls(int iter) {}
     
-    virtual void save_se()
-    {
-        
-    }
+    virtual void save_se() {}
 
     
 public:
@@ -141,6 +117,8 @@ public:
     se(p_),
     maxit(maxit_),
     tol(tol_),
+    mu_ref(mu),
+    eta_ref(eta),
     w_ref(w),
     z_ref(z)
     {}
@@ -162,8 +140,12 @@ public:
     {
 
         int i;
+
+        double ratio = 0.5;
         
         conv = false;
+
+        subsample(true);
         
         for(i = 0; i < maxit; ++i)
         {
@@ -196,6 +178,8 @@ public:
             auto time5 = std::chrono::high_resolution_clock::now();
             if (debug) Rcout << "WLS: " << std::chrono::duration_cast<std::chrono::microseconds>(time5 - time4).count() << "\n";
 
+            subsample(false);
+
             update_eta();
 
             auto time6 = std::chrono::high_resolution_clock::now();
@@ -211,7 +195,8 @@ public:
             auto time8 = std::chrono::high_resolution_clock::now();
             if (debug) Rcout << "Dev resids: " << std::chrono::duration_cast<std::chrono::microseconds>(time8 - time7).count() << "\n";
 
-            run_step_halving(i);
+            if (quant == 1) run_step_halving(i);
+            else cooldown(i, ratio);
 
             auto time9 = std::chrono::high_resolution_clock::now();
             if (debug) Rcout << "Step halve: " << std::chrono::duration_cast<std::chrono::microseconds>(time9 - time8).count() << "\n";

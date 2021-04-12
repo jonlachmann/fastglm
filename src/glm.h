@@ -68,7 +68,10 @@ protected:
     int rank;
 
     Eigen::Ref<Eigen::MatrixXd> X_ref;
-    
+    Eigen::Ref<Eigen::MatrixXd> Y_ref;
+    Eigen::Ref<Eigen::VectorXd> weights_ref;
+    Eigen::Ref<Eigen::VectorXd> offset_ref;
+
     FullPivHouseholderQR<MatrixXd> FPQR;
     ColPivHouseholderQR<MatrixXd> PQR;
     BDCSVD<MatrixXd> bSVD;
@@ -105,18 +108,18 @@ protected:
         if (!is_big_matrix || true)
         {
             return MatrixXd(nvars, nvars).setZero().selfadjointView<Lower>().
-            rankUpdate( (w.asDiagonal() * X).adjoint());
+            rankUpdate( (w_ref.asDiagonal() * X_ref).adjoint());
         } else
         {
             MatrixXd retmat(MatrixXd::Zero(nvars, nvars));
-            VectorXd wsquare = w.array().square();
+            VectorXd wsquare = w_ref.array().square();
             for (int j = 0; j < nvars; ++j)
             {
                 for (int k = j; k < nvars; ++k)
                 {
-                    for (int i = 0; i < nobs; ++i)
+                    for (int i = 0; i < X_ref.rows(); ++i)
                     {
-                        retmat(j, k) += X(i,j) * X(i,k) * wsquare(i);
+                        retmat(j, k) += X_ref(i,j) * X_ref(i,k) * wsquare(i);
                     }
                     retmat(k, j) = retmat(j, k);
                 }
@@ -127,77 +130,32 @@ protected:
 
     virtual void update_mu_eta()
     {
-        NumericVector mu_eta_nv = mu_eta_fun(eta);
-        
-        std::copy(mu_eta_nv.begin(), mu_eta_nv.end(), mu_eta.data());
+        mu_eta = Rcpp::as<Eigen::VectorXd>(mu_eta_fun(eta_ref));
     }
     
     virtual void update_var_mu()
     {
-        NumericVector var_mu_nv = variance_fun(mu);
-        
-        std::copy(var_mu_nv.begin(), var_mu_nv.end(), var_mu.data());
+        var_mu = Rcpp::as<Eigen::VectorXd>(variance_fun(mu_ref));
     }
     
     virtual void update_mu()
     {
-        // mu <- linkinv(eta <- eta + offset)
-        NumericVector mu_nv = linkinv(eta);
-
-        mu = Eigen::Map<Eigen::VectorXd>(mu_nv.begin(), mu.size());
-        //std::copy(mu_nv.begin(), mu_nv.end(), mu.data());
+        mu = Rcpp::as<Eigen::VectorXd>(linkinv(eta));
     }
     
     virtual void update_eta()
     {
-        // eta <- drop(x %*% start)
-        if (type == 0)
-        {
-            //VectorXd effects(PQR.householderQ().adjoint() * y);
-            if (rank == nvars) 
-            {
-                eta = X * beta + offset;
-            } else
-            {
-                //eta = PQR.householderQ() * effects + offset;
-                eta = X * beta + offset;
-            }
-        } else if (type == 1)
-        {
-            eta = X * beta + offset;
-        } else if (type == 2)
-        {
-            eta = X * beta + offset;
-        } else if (type == 3)
-        {
-            eta = X * beta + offset;
-        } else if (type == 4)
-        {
-            if (rank == nvars)
-            {
-                eta = X * beta + offset;
-            } else
-            {
-                //std::cout << FPQR.matrixQ().cols() << " " << effects.size() << std::endl;
-                //eta = FPQR.matrixQ() * effects + offset;
-                eta = X * beta + offset;
-            }
-        } else
-        {
-            eta = X * beta + offset;
-        }
+        eta = X * beta + offset;
     }
     
     virtual void update_z()
     {
-        // z <- (eta - offset)[good] + (y - mu)[good]/mu.eta.val[good]
-        z = (eta - offset).array() + (Y - mu).array() / mu_eta.array();
+        z = (eta - offset).array() + (Y_ref - mu_ref).array() / mu_eta.array();
     }
     
     virtual void update_w()
     {
-        // w <- sqrt((weights[good] * mu.eta.val[good]^2)/variance(mu)[good])
-        w = (weights.array() * mu_eta.array().square() / var_mu.array()).array().sqrt();
+        w = (weights_ref.array() * mu_eta.array().square() / var_mu.array()).array().sqrt();
     }
     
     virtual void update_dev_resids()
@@ -219,6 +177,43 @@ protected:
         beta = 0.5 * (beta.array() + beta_prev.array());
         update_eta();
         update_mu();
+    }
+
+    virtual void cooldown(int &iterr, double &ratio) {
+        if (iterr > 3) {
+            beta = ratio * beta.array() + (1-ratio) * beta_prev.array();
+            ratio = ratio * 0.5;
+        }
+    }
+
+    virtual void subsample(bool first) {
+        std::default_random_engine gen(time(0));
+        Eigen::VectorXi ind = Eigen::VectorXi::NullaryExpr(X.rows()*0.1,RandomRange<int>(0,X.rows()-1, gen));
+
+        // Subset weights, offset, Y and X each time
+        X_s = getRows(X, ind);
+        Y_s = getInds(Y, ind);
+        weights_s = getInds(weights, ind);
+        offset_s = getInds(offset, ind);
+
+        if (first) {
+            // Subset initial mu and eta
+            mu_s = getInds(mu, ind);
+            eta_s = getInds(eta, ind);
+            new(&mu_ref) Eigen::Ref<MatrixXd>(mu_s);
+            new(&eta_ref) Eigen::Ref<VectorXd>(eta_s);
+
+            // Change ref to weights, offset, X and Y first time
+            new(&X_ref) Eigen::Ref<MatrixXd>(X_s);
+            new(&Y_ref) Eigen::Ref<MatrixXd>(Y_s);
+            new(&weights_ref) Eigen::Ref<MatrixXd>(weights_s);
+            new(&offset_ref) Eigen::Ref<MatrixXd>(offset_s);
+        } else {
+            // Reset subset of mu and eta next time
+            new(&mu_ref) Eigen::Ref<MatrixXd>(mu);
+            new(&eta_ref) Eigen::Ref<VectorXd>(eta);
+        }
+
     }
 
     virtual void extract_quantile()
@@ -278,7 +273,7 @@ protected:
         
         
         // check for increasing deviance
-        //std::abs(deviance - deviance_prev) / (0.1 + std::abs(deviance)) < tol_irls
+        // std::abs(deviance - deviance_prev) / (0.1 + std::abs(deviance)) < tol_irls
         if ((dev - devold) / (0.1 + std::abs(dev)) >= tol && iterr > 0)
         {
 
@@ -302,6 +297,7 @@ protected:
                 
                 update_dev_resids_dont_update_old();
             }
+            Rcpp::Rcout << "Iters in halving " << itrr << "\n";
         }
     }
     
@@ -309,11 +305,6 @@ protected:
     // from the source code of the RcppEigen package
     virtual void solve_wls(int iter)
     {
-        //lm ans(do_lm(X, Y, w, type));
-        //wls ans(ColPivQR(X, z, w));
-        
-        //enum {ColPivQR_t = 0, QR_t, LLT_t, LDLT_t, SVD_t, SymmEigen_t, GESDD_t};
-        
         beta_prev = beta;
 
         if (type == 0)
@@ -345,40 +336,15 @@ protected:
             }
         } else if (type == 1)
         {
-                PQR.compute(w.asDiagonal() * X); // decompose the model matrix
-            Pmat = (PQR.colsPermutation());
-            rank                               = PQR.rank();
-            if (rank == nvars)
-            {	// full rank case
-                beta     = PQR.solve( (z.array() * w.array()).matrix() );
-                // m_fitted   = X * m_coef;
-                //m_se       = Pmat * PQR.matrixQR().topRows(m_p).
-                //triangularView<Upper>().solve(MatrixXd::Identity(nvars, nvars)).rowwise().norm();
-            } else
-            {
-                Rinv = (PQR.matrixQR().topLeftCorner(rank, rank).
-                                                      triangularView<Upper>().
-                                                      solve(MatrixXd::Identity(rank, rank)));
-                effects = PQR.householderQ().adjoint() * (z.array() * w.array()).matrix();
-                beta.head(rank)                 = Rinv * effects.head(rank);
-                beta                            = Pmat * beta;
-
-                // create fitted values from effects
-                // (can't use X*m_coef if X is rank-deficient)
-                effects.tail(nobs - rank).setZero();
-                //m_fitted                          = PQR.householderQ() * effects;
-                //m_se.head(m_r)                    = Rinv.rowwise().norm();
-                //m_se                              = Pmat * m_se;
-            }
-            //QR.compute(w.asDiagonal() * X);
-            //beta                     = QR.solve((z.array() * w.array()).matrix());
-            //m_fitted                   = X * m_coef;
+            QR.compute(w_ref.asDiagonal() * X_ref);
+            beta                     = QR.solve((z_ref.array() * w_ref.array()).matrix());
+            //m_fitted                   = X_ref * m_coef;
             //m_se                       = QR.matrixQR().topRows(m_p).
             //triangularView<Upper>().solve(I_p()).rowwise().norm();
         } else if (type == 2)
         {
             Ch.compute(XtWX().selfadjointView<Lower>());
-            beta            = Ch.solve((w.asDiagonal() * X).adjoint() * (z.array() * w.array()).matrix());
+            beta            = Ch.solve((w_ref.asDiagonal() * X_ref).adjoint() * (z_ref.array() * w_ref.array()).matrix());
             //m_fitted          = X * m_coef;
             //m_se              = Ch.matrixL().solve(I_p()).colwise().norm();
         } else if (type == 3)
@@ -389,17 +355,17 @@ protected:
             //the coefficients and the standard error computation.
             //	m_coef            = Ch.matrixL().adjoint().
             //	    solve(Dplus(D) * Ch.matrixL().solve(X.adjoint() * y));
-            beta            = ChD.solve((w.asDiagonal() * X).adjoint() * (z.array() * w.array()).matrix());
+            beta            = ChD.solve((w_ref.asDiagonal() * X_ref).adjoint() * (z_ref.array() * w_ref.array()).matrix());
             //m_fitted          = X * m_coef;
             //m_se              = Ch.solve(I_p()).diagonal().array().sqrt();
         } else if (type == 4)
         {
-            FPQR.compute(w.asDiagonal() * X); // decompose the model matrix
+            FPQR.compute(w_ref.asDiagonal() * X_ref); // decompose the model matrix
             Pmat = (FPQR.colsPermutation());
             rank                               = FPQR.rank();
             if (rank == nvars) 
             {	// full rank case
-                beta     = FPQR.solve( (z.array() * w.array()).matrix() );
+                beta     = FPQR.solve( (z_ref.array() * w_ref.array()).matrix() );
                 // m_fitted   = X * m_coef;
                 //m_se       = Pmat * PQR.matrixQR().topRows(m_p).
                 //triangularView<Upper>().solve(MatrixXd::Identity(nvars, nvars)).rowwise().norm();
@@ -408,21 +374,21 @@ protected:
                 Rinv = (FPQR.matrixQR().topLeftCorner(rank, rank).
                             triangularView<Upper>().
                             solve(MatrixXd::Identity(rank, rank)));
-                effects = FPQR.matrixQ().adjoint() * (z.array() * w.array()).matrix();
+                effects = FPQR.matrixQ().adjoint() * (z_ref.array() * w_ref.array()).matrix();
                 //std::cout << effects.transpose() << std::endl;
                 beta.head(rank)                 = Rinv * effects.head(rank);
                 beta                            = Pmat * beta;
                 
                 // create fitted values from effects
                 // (can't use X*m_coef if X is rank-deficient)
-                effects.tail(nobs - rank).setZero(); 
+                effects.tail(X_ref.rows() - rank).setZero();
                 //m_fitted                          = PQR.householderQ() * effects;
                 //m_se.head(m_r)                    = Rinv.rowwise().norm();
                 //m_se                              = Pmat * m_se;
             }
         } else if (type == 5)
         {
-            bSVD.compute(w.asDiagonal() * X, ComputeThinU | ComputeThinV);
+            bSVD.compute(w_ref.asDiagonal() * X_ref, ComputeThinU | ComputeThinV);
             
             rank                               = bSVD.rank();
             
@@ -434,7 +400,7 @@ protected:
             //     
             // }
             
-            beta                     = bSVD.solve((z.array() * w.array()).matrix());
+            beta                     = bSVD.solve((z_ref.array() * w_ref.array()).matrix());
             
             //FIXME: Check on the permutation in the LDLT and incorporate it in
             //the coefficients and the standard error computation.
@@ -442,30 +408,11 @@ protected:
             //	    solve(Dplus(D) * Ch.matrixL().solve(X.adjoint() * y));
             //m_fitted          = X * m_coef;
             //m_se              = Ch.solve(I_p()).diagonal().array().sqrt();
-        } 
-        // } else if (type == 4)
-        // {
-        // //     UDV.compute((w.asDiagonal() * X).jacobiSvd(ComputeThinU|ComputeThinV));
-        // //     MatrixXd             VDi(UDV.matrixV() *
-        // //         Dplus(UDV.singularValues().array()).matrix().asDiagonal());
-        // //     beta                   = VDi * UDV.matrixU().adjoint() * (z.array() * w.array()).matrix();
-        // //     //m_fitted                 = X * m_coef;
-        // //     //m_se                     = VDi.rowwise().norm();
-        // // } else if (type == 5)
-        // // {
-        //     eig.compute(XtWX().selfadjointView<Lower>());
-        //     MatrixXd   VDi(eig.eigenvectors() *
-        //         Dplus(eig.eigenvalues().array()).sqrt().matrix().asDiagonal());
-        //     beta         = VDi * VDi.adjoint() * X.adjoint() * (z.array() * w.array()).matrix();
-        //     //m_fitted       = X * m_coef;
-        //     //m_se           = VDi.rowwise().norm();
-        // }
-
+        }
     }
     
     virtual void save_se()
     {
-        
         if (type == 0)
         {
             if (rank == nvars) 
@@ -538,8 +485,6 @@ public:
                                                      Y(Y_),
                                                      weights(weights_),
                                                      offset(offset_),
-                                                     //X(X_.data(), X_.rows(), X_.cols()),
-                                                     //Y(Y_.data(), Y_.size()),
                                                      variance_fun(variance_fun_),
                                                      mu_eta_fun(mu_eta_fun_),
                                                      linkinv(linkinv_),
@@ -553,7 +498,10 @@ public:
                                                      quant(quant_),
                                                      is_big_matrix(is_big_matrix_),
                                                      debug(debug_),
-                                                     X_ref(X_)
+                                                     X_ref(X_),
+                                                     Y_ref(Y_),
+                                                     weights_ref(weights_),
+                                                     offset_ref(offset_)
                                                      {}
     
     
