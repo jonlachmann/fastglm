@@ -29,8 +29,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fit_glm
-List fit_glm(Rcpp::NumericMatrix x, Rcpp::NumericVector y, Rcpp::NumericVector weights, Rcpp::NumericVector offset, Rcpp::NumericVector start, Rcpp::NumericVector mu, Rcpp::NumericVector eta, Function var, Function mu_eta, Function linkinv, Function dev_resids, Function valideta, Function validmu, int type, double tol, int maxit, double quant);
-RcppExport SEXP _fastglm_fit_glm(SEXP xSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP offsetSEXP, SEXP startSEXP, SEXP muSEXP, SEXP etaSEXP, SEXP varSEXP, SEXP mu_etaSEXP, SEXP linkinvSEXP, SEXP dev_residsSEXP, SEXP validetaSEXP, SEXP validmuSEXP, SEXP typeSEXP, SEXP tolSEXP, SEXP maxitSEXP, SEXP quantSEXP) {
+List fit_glm(Rcpp::NumericMatrix x, Rcpp::NumericVector y, Rcpp::NumericVector weights, Rcpp::NumericVector offset, Rcpp::NumericVector start, Rcpp::NumericVector mu, Rcpp::NumericVector eta, Function var, Function mu_eta, Function linkinv, Function dev_resids, Function valideta, Function validmu, int type, double tol, int maxit, int maxit_s, double quant, bool debug);
+RcppExport SEXP _fastglm_fit_glm(SEXP xSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP offsetSEXP, SEXP startSEXP, SEXP muSEXP, SEXP etaSEXP, SEXP varSEXP, SEXP mu_etaSEXP, SEXP linkinvSEXP, SEXP dev_residsSEXP, SEXP validetaSEXP, SEXP validmuSEXP, SEXP typeSEXP, SEXP tolSEXP, SEXP maxitSEXP, SEXP maxit_sSEXP, SEXP quantSEXP, SEXP debugSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -50,14 +50,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type type(typeSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit_s(maxit_sSEXP);
     Rcpp::traits::input_parameter< double >::type quant(quantSEXP);
-    rcpp_result_gen = Rcpp::wrap(fit_glm(x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, quant));
+    Rcpp::traits::input_parameter< bool >::type debug(debugSEXP);
+    rcpp_result_gen = Rcpp::wrap(fit_glm(x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, maxit_s, quant, debug));
     return rcpp_result_gen;
 END_RCPP
 }
 // fit_big_glm
-List fit_big_glm(SEXP x, Rcpp::NumericVector y, Rcpp::NumericVector weights, Rcpp::NumericVector offset, Rcpp::NumericVector start, Rcpp::NumericVector mu, Rcpp::NumericVector eta, Function var, Function mu_eta, Function linkinv, Function dev_resids, Function valideta, Function validmu, int type, double tol, int maxit, double quant);
-RcppExport SEXP _fastglm_fit_big_glm(SEXP xSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP offsetSEXP, SEXP startSEXP, SEXP muSEXP, SEXP etaSEXP, SEXP varSEXP, SEXP mu_etaSEXP, SEXP linkinvSEXP, SEXP dev_residsSEXP, SEXP validetaSEXP, SEXP validmuSEXP, SEXP typeSEXP, SEXP tolSEXP, SEXP maxitSEXP, SEXP quantSEXP) {
+List fit_big_glm(SEXP x, Rcpp::NumericVector y, Rcpp::NumericVector weights, Rcpp::NumericVector offset, Rcpp::NumericVector start, Rcpp::NumericVector mu, Rcpp::NumericVector eta, Function var, Function mu_eta, Function linkinv, Function dev_resids, Function valideta, Function validmu, int type, double tol, int maxit, int maxit_s, double quant, bool debug);
+RcppExport SEXP _fastglm_fit_big_glm(SEXP xSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP offsetSEXP, SEXP startSEXP, SEXP muSEXP, SEXP etaSEXP, SEXP varSEXP, SEXP mu_etaSEXP, SEXP linkinvSEXP, SEXP dev_residsSEXP, SEXP validetaSEXP, SEXP validmuSEXP, SEXP typeSEXP, SEXP tolSEXP, SEXP maxitSEXP, SEXP maxit_sSEXP, SEXP quantSEXP, SEXP debugSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -77,8 +79,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type type(typeSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit_s(maxit_sSEXP);
     Rcpp::traits::input_parameter< double >::type quant(quantSEXP);
-    rcpp_result_gen = Rcpp::wrap(fit_big_glm(x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, quant));
+    Rcpp::traits::input_parameter< bool >::type debug(debugSEXP);
+    rcpp_result_gen = Rcpp::wrap(fit_big_glm(x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, maxit_s, quant, debug));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -93,8 +97,8 @@ RcppExport SEXP prod_vec_big_right(SEXP, SEXP);
 static const R_CallMethodDef CallEntries[] = {
     {"_fastglm_colMax_dense", (DL_FUNC) &_fastglm_colMax_dense, 1},
     {"_fastglm_colMin_dense", (DL_FUNC) &_fastglm_colMin_dense, 1},
-    {"_fastglm_fit_glm", (DL_FUNC) &_fastglm_fit_glm, 17},
-    {"_fastglm_fit_big_glm", (DL_FUNC) &_fastglm_fit_big_glm, 17},
+    {"_fastglm_fit_glm", (DL_FUNC) &_fastglm_fit_glm, 19},
+    {"_fastglm_fit_big_glm", (DL_FUNC) &_fastglm_fit_big_glm, 19},
     {"colmax_big",         (DL_FUNC) &colmax_big,         1},
     {"colmin_big",         (DL_FUNC) &colmin_big,         1},
     {"colsums_big",        (DL_FUNC) &colsums_big,        1},

@@ -60,11 +60,14 @@ protected:
     
     double tol;
     int maxit;
+    int maxit_s;
     int type;
     double quant;
     bool is_big_matrix;
+    bool debug;
     int rank;
-    
+
+    Eigen::Ref<Eigen::MatrixXd> X_ref;
     
     FullPivHouseholderQR<MatrixXd> FPQR;
     ColPivHouseholderQR<MatrixXd> PQR;
@@ -141,14 +144,8 @@ protected:
         // mu <- linkinv(eta <- eta + offset)
         NumericVector mu_nv = linkinv(eta);
 
-        Rcout << "Mu update:" << "\n";
-        Rcout << mu_nv.size() << "\n";
-        Rcout << mu.size() << "\n";
-        Rcout << mu_nv.begin() << " - " << mu_nv.end() << "\n";
-
         mu = Eigen::Map<Eigen::VectorXd>(mu_nv.begin(), mu.size());
         //std::copy(mu_nv.begin(), mu_nv.end(), mu.data());
-        Rcout << "Mu 1: " << mu(1) << "\n";
     }
     
     virtual void update_eta()
@@ -218,13 +215,21 @@ protected:
     
     virtual void step_halve()
     {
-        Rcout << "Step halve internal 1" << "\n";
         // take half step
         beta = 0.5 * (beta.array() + beta_prev.array());
-        Rcout << "Step halve internal 2" << "\n";
         update_eta();
-        Rcout << "Step halve internal 3" << "\n";
         update_mu();
+    }
+
+    virtual void extract_quantile()
+    {
+        inds = topQuantile(w, quant);
+        w_s = getInds(w, inds);
+        z_s = getInds(z, inds);
+        X_s = getRows(X, inds);
+        new(&X_ref) Eigen::Ref<MatrixXd>(X_s);
+        new(&w_ref) Eigen::Ref<VectorXd>(w_s);
+        new(&z_ref) Eigen::Ref<VectorXd>(z_s);
     }
     
     virtual void run_step_halving(int &iterr)
@@ -232,12 +237,11 @@ protected:
         // check for infinite deviance
         if (std::isinf(dev))
         {
-            Rcout << "Step halve inf" << "\n";
             int itrr = 0;
             while(std::isinf(dev))
             {
                 ++itrr;
-                if (itrr > maxit)
+                if (itrr > maxit_s)
                 {
                     break;
                 }
@@ -254,7 +258,6 @@ protected:
         // check for boundary violations
         if (!(valideta(eta) && validmu(mu)))
         {
-            Rcout << "Step halve invalid" << "\n";
             int itrr = 0;
             while(!(valideta(eta) && validmu(mu)))
             {
@@ -278,7 +281,7 @@ protected:
         //std::abs(deviance - deviance_prev) / (0.1 + std::abs(deviance)) < tol_irls
         if ((dev - devold) / (0.1 + std::abs(dev)) >= tol && iterr > 0)
         {
-            Rcout << "Step halve dev increase" << "\n";
+
             int itrr = 0;
             
             //std::cout << "dev:" << deviance << "dev prev:" << deviance_prev << std::endl;
@@ -286,8 +289,8 @@ protected:
             while((dev - devold) / (0.1 + std::abs(dev)) >= -tol)
             {
                 ++itrr;
-                Rcout << "Step halve dev increase iter " << itrr << "\n";
-                if (itrr > maxit)
+
+                if (itrr > maxit_s)
                 {
                     break;
                 }
@@ -295,7 +298,6 @@ protected:
                 //std::cout << "half step (increasing dev)!" << itrr << std::endl;
                 
                 step_halve();
-                Rcout << "Step halve done" << "\n";
                 
                 
                 update_dev_resids_dont_update_old();
@@ -314,28 +316,14 @@ protected:
         
         beta_prev = beta;
 
-        if (quant != 1) {
-
-        }
-
-        inds = topQuantile(w, quant);
-
-        Rcout << quant << "\n";
-
-        w_s = getInds(w, inds);
-
-        z_s = getInds(z, inds);
-
-        X_s = getRows(X, inds);
-
         if (type == 0)
         {
-            PQR.compute(w_s.asDiagonal() * X_s); // decompose the model matrix
+            PQR.compute(w_ref.asDiagonal() * X_ref); // decompose the model matrix
             Pmat = (PQR.colsPermutation());
             rank                               = PQR.rank();
             if (rank == nvars) 
             {	// full rank case
-                beta     = PQR.solve( (z_s.array() * w_s.array()).matrix() );
+                beta     = PQR.solve( (z_ref.array() * w_ref.array()).matrix() );
                 // m_fitted   = X * m_coef;
                 //m_se       = Pmat * PQR.matrixQR().topRows(m_p).
                 //triangularView<Upper>().solve(MatrixXd::Identity(nvars, nvars)).rowwise().norm();
@@ -344,13 +332,13 @@ protected:
                 Rinv = (PQR.matrixQR().topLeftCorner(rank, rank).
                                                       triangularView<Upper>().
                                                       solve(MatrixXd::Identity(rank, rank)));
-                effects = PQR.householderQ().adjoint() * (z_s.array() * w_s.array()).matrix();
+                effects = PQR.householderQ().adjoint() * (z_ref.array() * w_ref.array()).matrix();
                 beta.head(rank)                 = Rinv * effects.head(rank);
                 beta                            = Pmat * beta;
                 
                 // create fitted values from effects
                 // (can't use X*m_coef if X is rank-deficient)
-                effects.tail(nobs - rank).setZero();
+                effects.tail(X_ref.rows() - rank).setZero();
                 //m_fitted                          = PQR.householderQ() * effects;
                 //m_se.head(m_r)                    = Rinv.rowwise().norm();
                 //m_se                              = Pmat * m_se;
@@ -539,9 +527,11 @@ public:
         Function &validmu_,
         double tol_ = 1e-6,
         int maxit_ = 100,
+        int maxit_s_ = 5,
         int type_ = 1,
         double quant_ = 1,
-        bool is_big_matrix_ = false) :
+        bool is_big_matrix_ = false,
+        bool debug_ = false) :
     GlmBase<Eigen::VectorXd, Eigen::MatrixXd>(X_.rows(), X_.cols(),
                                                      tol_, maxit_),
                                                      X(X_),
@@ -558,9 +548,12 @@ public:
                                                      validmu(validmu_),
                                                      tol(tol_),
                                                      maxit(maxit_),
+                                                     maxit_s(maxit_s_),
                                                      type(type_),
                                                      quant(quant_),
-                                                     is_big_matrix(is_big_matrix_)
+                                                     is_big_matrix(is_big_matrix_),
+                                                     debug(debug_),
+                                                     X_ref(X_)
                                                      {}
     
     

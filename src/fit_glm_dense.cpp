@@ -33,7 +33,9 @@ List fastglm(Rcpp::NumericMatrix Xs,
              int type, 
              double tol, 
              int maxit,
-             double quant)
+             int maxit_s,
+             double quant,
+             bool debug)
 {
     const Map<MatrixXd>  X(as<Map<MatrixXd> >(Xs));
     const Map<VectorXd>  y(as<Map<VectorXd> >(ys));
@@ -52,8 +54,8 @@ List fastglm(Rcpp::NumericMatrix Xs,
     
     glm_solver = new glm(X, y, weights, offset, 
                          var, mu_eta, linkinv, dev_resids, 
-                         valideta, validmu, tol, maxit, type, quant,
-                         is_big_matrix);
+                         valideta, validmu, tol, maxit, maxit_s, type, quant,
+                         is_big_matrix, debug);
     
     // initialize parameters
     glm_solver->init_parms(beta_init, mu_init, eta_init);
@@ -96,9 +98,9 @@ List fit_glm(Rcpp::NumericMatrix x, Rcpp::NumericVector y, Rcpp::NumericVector w
              Rcpp::NumericVector start, Rcpp::NumericVector mu, Rcpp::NumericVector eta,
              Function var, Function mu_eta, Function linkinv, Function dev_resids, 
              Function valideta, Function validmu,  
-             int type, double tol, int maxit, double quant)
+             int type, double tol, int maxit, int maxit_s, double quant, bool debug)
 {
-    return fastglm(x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, quant);
+    return fastglm(x, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, maxit_s, quant, debug);
 }
 
 
@@ -121,7 +123,9 @@ List bigfastglm(XPtr<BigMatrix> Xs,
                 int type, 
                 double tol, 
                 int maxit,
-                double quant)
+                int maxit_s,
+                double quant,
+                bool debug)
 {
     //const Map<MatrixXd>  X(as<Map<MatrixXd> >(Xs));
     //XPtr<BigMatrix> bMPtr(Xs);
@@ -202,10 +206,10 @@ List fit_big_glm(SEXP x, Rcpp::NumericVector y, Rcpp::NumericVector weights, Rcp
                  Rcpp::NumericVector start, Rcpp::NumericVector mu, Rcpp::NumericVector eta,
                  Function var, Function mu_eta, Function linkinv, Function dev_resids, 
                  Function valideta, Function validmu,  
-                 int type, double tol, int maxit, double quant)
+                 int type, double tol, int maxit, int maxit_s, double quant, bool debug)
 {
     XPtr<BigMatrix> xpMat(x);
     
-    return bigfastglm(xpMat, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, quant);
+    return bigfastglm(xpMat, y, weights, offset, start, mu, eta, var, mu_eta, linkinv, dev_resids, valideta, validmu, type, tol, maxit, maxit_s, quant, debug);
 }
 

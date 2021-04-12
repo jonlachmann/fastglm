@@ -95,7 +95,9 @@ fastglmPure <- function(x, y,
                         method   = 0L,
                         tol      = 1e-7,
                         maxit    = 100L,
-                        quant    = 1)
+                        maxit_s  = 5L,
+                        quant    = 1,
+                        debug = F)
 {
     weights <- as.vector(weights)
     offset  <- as.vector(offset)
@@ -126,6 +128,8 @@ fastglmPure <- function(x, y,
               is.numeric(method),
               is.numeric(tol),
               is.numeric(maxit),
+              is.numeric(maxit_s),
+              is.logical(debug),
               #tol[1] > 0,
               maxit[1] > 0,
               quant[1] > 0
@@ -203,7 +207,7 @@ fastglmPure <- function(x, y,
                        family$variance, family$mu.eta, family$linkinv, family$dev.resids, 
                        family$valideta, family$validmu,
                        as.integer(method[1]), as.double(tol[1]), as.integer(maxit[1]),
-                       as.double(quant[1])
+                       as.integer(maxit_s[1]), as.double(quant[1]), as.logical(debug[1])
         )
         
         res$intercept <- any(is.int <- colMax_dense(x) == colMin_dense(x))
@@ -214,7 +218,7 @@ fastglmPure <- function(x, y,
                            family$variance, family$mu.eta, family$linkinv, family$dev.resids, 
                            family$valideta, family$validmu,
                            as.integer(method[1]), as.double(tol[1]), as.integer(maxit[1]),
-                           as.double(quant[1])
+                           as.integer(maxit_s[1]), as.double(quant[1]), as.logical(debug[1])
         )
         
         res$intercept <- any(is.int <- big.colMax(x) == big.colMin(x))
@@ -342,7 +346,7 @@ fastglm.default <- function(x, y,
                             start    = NULL,
                             etastart = NULL,
                             mustart  = NULL,
-                            method = 0L, tol = 1e-8, maxit = 100L, quant = 1,
+                            method = 0L, tol = 1e-8, maxit = 100L, maxit_s = 5L, quant = 1, debug = F,
                             ...) 
 {
     ## family
@@ -376,7 +380,7 @@ fastglm.default <- function(x, y,
     
     res     <- fastglmPure(x, y, family, weights, offset, 
                            start, etastart, mustart,
-                           method, tol, maxit, quant)
+                           method, tol, maxit, maxit_s, quant, debug)
     y <- res$y
     
     res$residuals <- (y - res$fitted.values) / family$mu.eta(res$linear.predictors)

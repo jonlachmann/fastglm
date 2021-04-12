@@ -16,8 +16,6 @@ Eigen::VectorXi topQuantile(Eigen::VectorXd &vec, double quantile) {
 
 Eigen::MatrixXd getRows(const Eigen::Map<Eigen::MatrixXd> &mat, Eigen::VectorXi &rows) {
     Eigen::MatrixXd ret(rows.size(), mat.cols());
-    Rcpp::Rcout << "Max ind: " << rows.maxCoeff() << "\n";
-    Rcpp::Rcout << "Mat rows: " << mat.rows() << "\n";
     for (int i = 0; i < rows.size(); i++) {
         ret.row(i) = mat.row(rows(i));
     }

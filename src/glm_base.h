@@ -39,10 +39,15 @@ protected:
     double dev, devold, devnull;
     
     int maxit;            // max iterations
+    int maxit_s;          // max step halving iterations
     double tol;           // tolerance for convergence
     double quant;         // quantile of data to use
+    bool debug;           // debug flag
     bool conv;
-    
+
+    Eigen::Ref<Eigen::VectorXd> w_ref;
+    Eigen::Ref<Eigen::VectorXd> z_ref;
+
     
     virtual bool converged()
     {
@@ -90,6 +95,8 @@ protected:
     {
         
     }
+
+    virtual void extract_quantile() {}
     
     virtual void run_step_halving(int &iterr)
     {
@@ -133,7 +140,9 @@ public:
     vcov(p_, p_),
     se(p_),
     maxit(maxit_),
-    tol(tol_)
+    tol(tol_),
+    w_ref(w),
+    z_ref(z)
     {}
     
     virtual ~GlmBase() {}
@@ -151,59 +160,61 @@ public:
     
     int solve(int maxit)
     {
+
         int i;
         
         conv = false;
         
         for(i = 0; i < maxit; ++i)
         {
-            Rcout << "Iteration: " << i << "\n";
+            if (debug) Rcout << "Iteration: " << i << "\n";
             auto time0 = std::chrono::high_resolution_clock::now();
 
             update_var_mu();
 
             auto time1 = std::chrono::high_resolution_clock::now();
-            Rcout << "Var mu: " << std::chrono::duration_cast<std::chrono::microseconds>(time1 - time0).count() << "\n";
+            if (debug) Rcout << "Var mu: " << std::chrono::duration_cast<std::chrono::microseconds>(time1 - time0).count() << "\n";
 
             update_mu_eta();
 
             auto time2 = std::chrono::high_resolution_clock::now();
-            Rcout << "Mu eta: " << std::chrono::duration_cast<std::chrono::microseconds>(time2 - time1).count() << "\n";
+            if (debug) Rcout << "Mu eta: " << std::chrono::duration_cast<std::chrono::microseconds>(time2 - time1).count() << "\n";
 
             update_z();
 
             auto time3 = std::chrono::high_resolution_clock::now();
-            Rcout << "Z: " << std::chrono::duration_cast<std::chrono::microseconds>(time3 - time2).count() << "\n";
+            if (debug) Rcout << "Z: " << std::chrono::duration_cast<std::chrono::microseconds>(time3 - time2).count() << "\n";
 
             update_w();
 
             auto time4 = std::chrono::high_resolution_clock::now();
-            Rcout << "W: " << std::chrono::duration_cast<std::chrono::microseconds>(time4 - time3).count() << "\n";
+            if (debug) Rcout << "W: " << std::chrono::duration_cast<std::chrono::microseconds>(time4 - time3).count() << "\n";
 
+            if (quant != 1) extract_quantile();
             solve_wls(i);
 
             auto time5 = std::chrono::high_resolution_clock::now();
-            Rcout << "WLS: " << std::chrono::duration_cast<std::chrono::microseconds>(time5 - time4).count() << "\n";
+            if (debug) Rcout << "WLS: " << std::chrono::duration_cast<std::chrono::microseconds>(time5 - time4).count() << "\n";
 
             update_eta();
 
             auto time6 = std::chrono::high_resolution_clock::now();
-            Rcout << "Eta: " << std::chrono::duration_cast<std::chrono::microseconds>(time6 - time5).count() << "\n";
+            if (debug) Rcout << "Eta: " << std::chrono::duration_cast<std::chrono::microseconds>(time6 - time5).count() << "\n";
 
             update_mu();
 
             auto time7 = std::chrono::high_resolution_clock::now();
-            Rcout << "Mu: " << std::chrono::duration_cast<std::chrono::microseconds>(time7 - time6).count() << "\n";
+            if (debug) Rcout << "Mu: " << std::chrono::duration_cast<std::chrono::microseconds>(time7 - time6).count() << "\n";
 
             update_dev_resids();
 
             auto time8 = std::chrono::high_resolution_clock::now();
-            Rcout << "Dev resids: " << std::chrono::duration_cast<std::chrono::microseconds>(time8 - time7).count() << "\n";
+            if (debug) Rcout << "Dev resids: " << std::chrono::duration_cast<std::chrono::microseconds>(time8 - time7).count() << "\n";
 
             run_step_halving(i);
 
             auto time9 = std::chrono::high_resolution_clock::now();
-            Rcout << "Step halve: " << std::chrono::duration_cast<std::chrono::microseconds>(time9 - time8).count() << "\n";
+            if (debug) Rcout << "Step halve: " << std::chrono::duration_cast<std::chrono::microseconds>(time9 - time8).count() << "\n";
 
             if (std::isinf(dev) && i == 0)
             {
