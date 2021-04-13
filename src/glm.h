@@ -498,10 +498,10 @@ public:
                                                      quant(quant_),
                                                      is_big_matrix(is_big_matrix_),
                                                      debug(debug_),
-                                                     X_ref(X_),
-                                                     Y_ref(Y_),
-                                                     weights_ref(weights_),
-                                                     offset_ref(offset_)
+                                                     X_ref(X),
+                                                     Y_ref(Y),
+                                                     weights_ref(weights),
+                                                     offset_ref(offset)
                                                      {}
     
     
