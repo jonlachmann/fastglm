@@ -130,12 +130,12 @@ protected:
 
     virtual void update_mu_eta()
     {
-        mu_eta = Rcpp::as<Eigen::VectorXd>(mu_eta_fun(eta_ref));
+        mu_eta = Rcpp::as<Eigen::VectorXd>(mu_eta_fun(eta));
     }
     
     virtual void update_var_mu()
     {
-        var_mu = Rcpp::as<Eigen::VectorXd>(variance_fun(mu_ref));
+        var_mu = Rcpp::as<Eigen::VectorXd>(variance_fun(mu));
     }
     
     virtual void update_mu()
@@ -145,12 +145,12 @@ protected:
     
     virtual void update_eta()
     {
-        eta = X * beta + offset;
+        eta = X_ref * beta + offset_ref;
     }
     
     virtual void update_z()
     {
-        z = (eta - offset).array() + (Y_ref - mu_ref).array() / mu_eta.array();
+        z = (eta - offset).array() + (Y_ref - mu).array() / mu_eta.array();
     }
     
     virtual void update_w()
@@ -198,10 +198,10 @@ protected:
 
         if (first) {
             // Subset initial mu and eta
-            mu_s = getInds(mu, ind);
-            eta_s = getInds(eta, ind);
-            new(&mu_ref) Eigen::Ref<MatrixXd>(mu_s);
-            new(&eta_ref) Eigen::Ref<VectorXd>(eta_s);
+            mu = getInds(mu, ind);
+            eta = getInds(eta, ind);
+            //new(&mu_ref) Eigen::Ref<MatrixXd>(mu_s);
+            //new(&eta_ref) Eigen::Ref<VectorXd>(eta_s);
 
             // Change ref to weights, offset, X and Y first time
             new(&X_ref) Eigen::Ref<MatrixXd>(X_s);
@@ -210,8 +210,8 @@ protected:
             new(&offset_ref) Eigen::Ref<MatrixXd>(offset_s);
         } else {
             // Reset subset of mu and eta next time
-            new(&mu_ref) Eigen::Ref<MatrixXd>(mu);
-            new(&eta_ref) Eigen::Ref<VectorXd>(eta);
+            //new(&mu_ref) Eigen::Ref<MatrixXd>(mu);
+            //new(&eta_ref) Eigen::Ref<VectorXd>(eta);
         }
 
     }

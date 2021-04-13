@@ -50,7 +50,7 @@ mod_count <- 500
 mliks <- matrix(NA, mod_count, 2)
 for (i in 1:mod_count) {
   model <- as.logical(c(T,intToBits(i*100)[1:20]))
-  def_mod <- fastglm(as.matrix(logistic_x[,model]), as.matrix(logistic_y), family=binomial(), method=0, debug=F)
+  def_mod <- fastglm(as.matrix(logistic_x[,model]), as.matrix(logistic_y), family=binomial())
   sub_mod <- fastglm(as.matrix(logistic_x[,model]), as.matrix(logistic_y), family=binomial(), method=0, quant=0.25, maxit=12, maxit_s=15, debug=T)
   mliks[i,1] <- -def_mod$deviance/2
   mliks[i,2] <- -sub_mod$deviance/2
@@ -61,7 +61,7 @@ plot(mliks[,2], type="l", col="red", ylim=c(-2000, -700))
 lines(mliks[,1])
 
 model <- as.logical(c(T,intToBits(338*100)[1:20]))
-  def_mod <- fastglm(as.matrix(logistic_x[,model]), as.matrix(logistic_y), family=binomial(), method=0, debug=F)
+  def_mod <- fastglmPure(as.matrix(logistic_x[,model]), as.matrix(logistic_y), family=binomial(), method=0, debug=T)
   sub_mod <- fastglm(as.matrix(logistic_x[,model]), as.matrix(logistic_y), family=binomial(), method=0, quant=0.5, maxit=10, maxit_s=5, debug=F)
 
 which.max(mliks[,1] - mliks[,2])

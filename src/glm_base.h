@@ -51,8 +51,8 @@ protected:
     int debug;           // debug flag
     bool conv;
 
-    Eigen::Ref<Eigen::VectorXd> mu_ref;
-    Eigen::Ref<Eigen::VectorXd> eta_ref;
+    //Eigen::Ref<Eigen::VectorXd> mu_ref;
+    //Eigen::Ref<Eigen::VectorXd> eta_ref;
     Eigen::Ref<Eigen::VectorXd> w_ref;
     Eigen::Ref<Eigen::VectorXd> z_ref;
 
@@ -117,8 +117,8 @@ public:
     se(p_),
     maxit(maxit_),
     tol(tol_),
-    mu_ref(mu),
-    eta_ref(eta),
+    //mu_ref(mu),
+    //eta_ref(eta),
     w_ref(w),
     z_ref(z)
     {}
@@ -145,7 +145,7 @@ public:
         
         conv = false;
 
-        subsample(true);
+        //subsample(true);
         
         for(i = 0; i < maxit; ++i)
         {
@@ -178,7 +178,7 @@ public:
             auto time5 = std::chrono::high_resolution_clock::now();
             if (debug == 1) Rcout << "WLS: " << std::chrono::duration_cast<std::chrono::microseconds>(time5 - time4).count() << "\n";
 
-            subsample(false);
+            //subsample(false);
 
             update_eta();
 
