@@ -145,6 +145,9 @@ protected:
     
     virtual void update_eta()
     {
+        Rcout << "X:      " << X_ref.rows() << "x" << X_ref.cols() << "\n";
+        Rcout << "beta:   " << beta.rows() << "x" << beta.cols() << "\n";
+        Rcout << "offset: " << offset_ref.rows() << "x" << offset_ref.cols() << "\n";
         eta = X_ref * beta + offset_ref;
     }
     
@@ -222,9 +225,13 @@ protected:
         w_s = getInds(w, inds);
         z_s = getInds(z, inds);
         X_s = getRows(X, inds);
+        weights_s = getInds(weights, inds);
+        offset_s = getInds(offset, inds);
         new(&X_ref) Eigen::Ref<MatrixXd>(X_s);
         new(&w_ref) Eigen::Ref<VectorXd>(w_s);
         new(&z_ref) Eigen::Ref<VectorXd>(z_s);
+        new(&weights_ref) Eigen::Ref<MatrixXd>(weights_s);
+        new(&offset_ref) Eigen::Ref<MatrixXd>(offset_s);
     }
     
     virtual void run_step_halving(int &iterr)
